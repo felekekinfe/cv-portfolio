@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import Image from "next/image"
 import * as THREE from "three"
 
 export default function BrainModel() {
@@ -45,7 +44,7 @@ export default function BrainModel() {
     scene.add(pointLight)
 
     // Create neural connections (lines) around where the image will be
-    const lineCount = 50
+    const lineCount = 80 // Increased for more density
     const lineMaterial = new THREE.LineBasicMaterial({
       color: 0x00ffff,
       transparent: true,
@@ -83,6 +82,31 @@ export default function BrainModel() {
       scene.add(line)
     }
 
+    // Add particles for more sci-fi effect
+    const particleCount = 200
+    const particleGeometry = new THREE.BufferGeometry()
+    const particlePositions = new Float32Array(particleCount * 3)
+
+    for (let i = 0; i < particleCount * 3; i += 3) {
+      const angle = Math.random() * Math.PI * 2
+      const radius = 2 + Math.random() * 3
+      particlePositions[i] = Math.cos(angle) * radius
+      particlePositions[i + 1] = (Math.random() - 0.5) * 5
+      particlePositions[i + 2] = Math.sin(angle) * radius
+    }
+
+    particleGeometry.setAttribute("position", new THREE.BufferAttribute(particlePositions, 3))
+
+    const particleMaterial = new THREE.PointsMaterial({
+      color: 0x00ffff,
+      size: 0.05,
+      transparent: true,
+      opacity: 0.8,
+    })
+
+    const particles = new THREE.Points(particleGeometry, particleMaterial)
+    scene.add(particles)
+
     // Handle window resize
     const handleResize = () => {
       if (!containerRef.current) return
@@ -101,10 +125,16 @@ export default function BrainModel() {
       scene.rotation.y += 0.003
       scene.rotation.x += 0.001
 
+      // Rotate particles
+      particles.rotation.y += 0.001
+
       // Pulse effect
       const time = Date.now() * 0.001
       const scale = 1 + Math.sin(time) * 0.05
       scene.scale.set(scale, scale, scale)
+
+      // Pulse particle opacity
+      particleMaterial.opacity = 0.5 + Math.sin(time * 2) * 0.3
 
       renderer.render(scene, camera)
     }
@@ -118,23 +148,29 @@ export default function BrainModel() {
       if (containerRef.current) {
         containerRef.current.removeChild(renderer.domElement)
       }
+
+      // Dispose resources
+      particleGeometry.dispose()
+      particleMaterial.dispose()
     }
   }, [])
 
   return (
     <div ref={containerRef} className="w-full h-full relative">
-      {/* Your image will be placed here, centered in the neural network effect */}
+      {/* The image container is now fully transparent */}
       <div
         className={`absolute inset-0 flex items-center justify-center transition-opacity duration-1000 ${isLoaded ? "opacity-100" : "opacity-0"}`}
       >
-        <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full overflow-hidden border-4 border-cyan-500/50 shadow-glow-lg">
-          <Image
+        {/* Removed the border and background, keeping only a subtle glow effect */}
+        <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full overflow-hidden shadow-glow-lg">
+          {/* The image itself is transparent - you can add your image here when ready */}
+          {/* <Image
             src="/placeholder.svg?height=400&width=400"
             alt="Feleke Kinfe"
             fill
-            className="object-cover"
+            className="object-cover opacity-0"
             priority
-          />
+          /> */}
         </div>
       </div>
     </div>
